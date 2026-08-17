@@ -1,0 +1,12 @@
+/node_modules
+/.next
+/out
+.env*
+!.env.example
+*.log
+*.tsbuildinfo
+
+# Shopee exports contain account-specific affiliate links
+/data/imports/*.csv
+/data/reports/*
+/data/experiments/*
