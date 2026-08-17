@@ -3,9 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  BarChart3, Bell, Bot, Boxes, CalendarDays, ChevronDown, CircleHelp, FlaskConical,
-  LayoutDashboard, Menu, Orbit, PackageSearch, PanelLeftClose, Rocket, Search,
-  Send, Settings, Sparkles, Target, Video, X, Zap,
+  Bell, ChevronDown, CircleHelp, LayoutDashboard, Menu, Orbit, PanelLeftClose,
+  Rocket, Search, Send, Settings, Sparkles, Video, X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useState } from "react";
@@ -13,24 +12,23 @@ import { useState } from "react";
 interface NavItem { href: string; label: string; icon: LucideIcon; badge?: string; accent?: boolean }
 interface NavGroup { label: string; items: NavItem[] }
 
+/*
+ * Chỉ liệt kê những trang đang THẬT SỰ dùng trong luồng hiện tại:
+ * tìm sản phẩm → lấy ảnh → ChatGPT sinh prompt + lời thoại → TikTok Symphony →
+ * nạp video về → đăng lên mạng xã hội.
+ *
+ * ⚠️ Các trang bị gỡ khỏi đây (winners, experiments, analytics, jobs,
+ * settings/ai, products/discover) VẪN CÒN mã và vẫn mở được bằng URL trực tiếp.
+ * Chúng phục vụ luồng đo ROI bằng Báo cáo click/chuyển đổi — chưa chạy nên
+ * không nên chiếm chỗ trên thanh bên. Cần dùng lại thì thêm dòng vào đây.
+ */
 const nav: NavGroup[] = [
   { label: "Vận hành", items: [
     { href: "/", label: "Command Center", icon: LayoutDashboard },
     { href: "/radar", label: "Product Radar", icon: Orbit },
-    { href: "/products/discover", label: "Khám phá", icon: PackageSearch },
-    { href: "/winners", label: "Winners", icon: Target },
-  ] },
-  { label: "Tăng trưởng", items: [
     { href: "/content", label: "Content Studio", icon: Video },
-    { href: "/experiments", label: "Thử nghiệm", icon: FlaskConical },
-    { href: "/calendar", label: "Lịch nội dung", icon: CalendarDays },
-    { href: "/analytics", label: "Phân tích", icon: BarChart3 },
   ] },
   { label: "Hệ thống", items: [
-    { href: "/ai-ceo", label: "AI CEO", icon: Bot, accent: true },
-    { href: "/autopilot", label: "Autopilot", icon: Zap },
-    { href: "/jobs", label: "Jobs", icon: Boxes },
-    { href: "/settings/ai", label: "AI Provider", icon: Sparkles },
     { href: "/settings/publishing", label: "Đăng tự động", icon: Send },
     { href: "/settings/shopee", label: "Cài đặt", icon: Settings },
   ] },

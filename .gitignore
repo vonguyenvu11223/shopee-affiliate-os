@@ -11,3 +11,20 @@
 /data/reports/*
 /data/experiments/*
 /data/inbox/**/*.csv
+
+# Ảnh sản phẩm lấy từ CDN Shopee và file lồng tiếng — lấy lại được, và là nội
+# dung của bên thứ ba. 43 MB ảnh trong git là nặng vô ích.
+/public/anh-san-pham/*
+/public/audio/*
+/data/kich-ban/*.json
+!/data/kich-ban/.gitkeep
+
+# File giọng tự chuẩn bị — nặng, và có thể là giọng thật của bạn.
+/data/giong/*
+!/data/giong/.gitkeep
+
+# Clip nền tải từ Symphony — nặng, lấy lại được.
+/data/clip/*
+!/data/clip/.gitkeep
+/public/clip/*
+/data/kich-ban/*.txt

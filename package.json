@@ -10,16 +10,27 @@
     "typecheck": "tsc --noEmit",
     "test": "node --test --experimental-strip-types tests/*.test.mjs",
     "verify:production": "node scripts/verify-production.mjs",
-    "watch": "node scripts/watch-imports.mjs"
+    "watch": "node scripts/watch-imports.mjs",
+    "anh": "node scripts/lay-anh-san-pham.mjs",
+    "prompt": "node scripts/prompt.mjs",
+    "nhap": "node scripts/nhap.mjs",
+    "video": "node scripts/render-video.mjs",
+    "studio": "remotion studio src/video/index.ts"
   },
   "dependencies": {
+    "@remotion/bundler": "^4.0.512",
+    "@remotion/google-fonts": "^4.0.512",
+    "@remotion/renderer": "^4.0.512",
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.112.3",
     "lucide-react": "^0.468.0",
+    "msedge-tts": "^2.0.7",
+    "music-metadata": "^11.14.0",
     "next": "^16.0.0",
     "openai": "^7.4.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "remotion": "^4.0.512",
     "zod": "^4.4.3"
   },
   "devDependencies": {
