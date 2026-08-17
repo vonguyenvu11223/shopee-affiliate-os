@@ -5,6 +5,9 @@ import { analyzeProductTrend } from "@/lib/intelligence/trend-engine";
 import type { AffiliateExportData } from "@/lib/data/affiliate-data-types";
 import { getDatabaseAffiliateData } from "@/repositories/product-repository";
 import { getDataFreshness } from "@/lib/data/freshness";
+// Bo doc CSV thuan da tach ra tep rieng de scripts/watch-imports.mjs dung chung.
+import { parseAffiliateExportCsv, colorFor } from "./affiliate-export-parser";
+export { parseAffiliateExportCsv };
 
 export type { AffiliateExportData } from "@/lib/data/affiliate-data-types";
 
@@ -14,83 +17,6 @@ const EMPTY_DATA: AffiliateExportData = {
   freshness: getDataFreshness(null),
 };
 const EXPORT_PATTERN = /^(Lấy link sản phẩm hàng loạt|shopee-products-).*\.csv$/i;
-const REQUIRED_HEADERS = ["Mã sản phẩm", "Tên sản phẩm", "Giá", "Tỉ lệ hoa hồng", "Hoa hồng", "Link ưu đãi"];
-
-function parseCsv(input: string): string[][] {
-  const rows: string[][] = [];
-  let row: string[] = [];
-  let field = "";
-  let quoted = false;
-  for (let index = 0; index < input.length; index += 1) {
-    const char = input[index];
-    if (char === '"') {
-      if (quoted && input[index + 1] === '"') { field += '"'; index += 1; }
-      else quoted = !quoted;
-    } else if (char === "," && !quoted) { row.push(field.trim()); field = ""; }
-    else if ((char === "\n" || char === "\r") && !quoted) {
-      if (char === "\r" && input[index + 1] === "\n") index += 1;
-      row.push(field.trim());
-      if (row.some(Boolean)) rows.push(row);
-      row = []; field = "";
-    } else field += char;
-  }
-  if (field || row.length) { row.push(field.trim()); if (row.some(Boolean)) rows.push(row); }
-  return rows;
-}
-
-function parseCompactNumber(raw: string): number | null {
-  const value = raw.trim().toLowerCase().replace(/\s|\+/g, "");
-  if (!value) return null;
-  const compact = value.match(/^([\d.,]+)(k|tr|m)$/);
-  if (compact) {
-    const base = Number(compact[1].replace(/\./g, "").replace(",", "."));
-    if (!Number.isFinite(base)) return null;
-    return Math.round(base * (compact[2] === "k" ? 1_000 : 1_000_000));
-  }
-  const number = Number(value.replace(/[^\d-]/g, ""));
-  return Number.isFinite(number) ? number : null;
-}
-
-function parseMoney(raw: string): number {
-  return parseCompactNumber(raw.replace(/[₫đ]/gi, "")) ?? 0;
-}
-
-function parseRate(raw: string): number {
-  const value = Number(raw.replace("%", "").replace(",", ".").trim());
-  return Number.isFinite(value) ? value : 0;
-}
-
-function colorFor(id: string): string {
-  const palette = ["#fcddd1", "#dbe8d1", "#d9e4f7", "#eee1ba", "#ead9e6", "#d8ece8"];
-  return palette[[...id].reduce((sum, char) => sum + char.charCodeAt(0), 0) % palette.length];
-}
-
-export function parseAffiliateExportCsv(csv: string, importedAt: string): ProductOpportunity[] {
-  const rows = parseCsv(csv.replace(/^\uFEFF/, ""));
-  const headers = rows.shift()?.map(header => header.trim());
-  if (!headers || REQUIRED_HEADERS.some(header => !headers.includes(header))) {
-    throw new Error("File không đúng định dạng xuất link hàng loạt của Shopee Affiliate.");
-  }
-  const index = new Map(headers.map((header, position) => [header, position]));
-  const value = (row: string[], name: string) => row[index.get(name) ?? -1]?.trim() ?? "";
-
-  return rows.flatMap((row): ProductOpportunity[] => {
-    const id = value(row, "Mã sản phẩm");
-    const name = value(row, "Tên sản phẩm");
-    if (!id || !name) return [];
-    return [{
-      id, name, category: "Chưa phân loại", price: parseMoney(value(row, "Giá")),
-      sold: parseCompactNumber(value(row, "Doanh thu")), growth24h: null, acceleration: null,
-      commissionRate: parseRate(value(row, "Tỉ lệ hoa hồng")), commissionAmount: parseMoney(value(row, "Hoa hồng")),
-      trendStage: "DISCOVERY", trendScore: null, profitScore: null, contentFit: null,
-      urgencyScore: null, sellerScore: null, confidence: null, expectedProfit: null,
-      expectedRoi: null, masterScore: null, recommendation: "REVIEW", halfLife: "Chưa đủ dữ liệu",
-      color: colorFor(id), source: "AFFILIATE_EXPORT", shopName: value(row, "Tên cửa hàng"),
-      productUrl: value(row, "Link sản phẩm"), affiliateUrl: value(row, "Link ưu đãi"), importedAt,
-    }];
-  });
-}
-
 export async function getAffiliateExportData(): Promise<AffiliateExportData> {
   const databaseData = await getDatabaseAffiliateData();
   if (databaseData) return databaseData;

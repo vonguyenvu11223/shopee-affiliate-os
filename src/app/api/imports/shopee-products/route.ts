@@ -7,6 +7,7 @@ import { assertRateLimit, assertSameOrigin, RequestGuardError, requireUserAuthor
 import { persistProductImport } from "@/repositories/product-repository";
 import { createRequestTelemetry } from "@/lib/observability/request-telemetry";
 import { createProductSnapshotFingerprint } from "@/lib/data/import-fingerprint";
+import { docMocXuatTuTenFile } from "@/lib/data/export-timestamp";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
@@ -23,7 +24,14 @@ export async function POST(request: Request) {
     if (file.size <= 0 || file.size > MAX_FILE_SIZE) return NextResponse.json({ error: "File phải nhỏ hơn 5 MB." }, { status: 400 });
 
     const csv = await file.text();
-    const importedAt = new Date().toISOString();
+    /*
+     * Ưu tiên thời điểm XUẤT file (đọc từ tên file Shopee đặt), không phải thời
+     * điểm nhập. Toàn bộ giá trị của công cụ này nằm ở việc đo thay đổi theo thời
+     * gian; đóng dấu lúc bấm nhập thì nhập hai file cũ trong cùng một buổi sẽ cho
+     * ra hai snapshot cách nhau vài phút — velocity vô nghĩa mà không có gì báo.
+     * Không đọc được thì mới lùi về hiện tại. Xem `lib/data/export-timestamp.ts`.
+     */
+    const importedAt = docMocXuatTuTenFile(file.name) ?? new Date().toISOString();
     const products = parseAffiliateExportCsv(csv, importedAt);
     if (!products.length) return NextResponse.json({ error: "File không có sản phẩm hợp lệ." }, { status: 400 });
 
