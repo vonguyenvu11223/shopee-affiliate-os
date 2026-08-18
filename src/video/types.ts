@@ -42,8 +42,21 @@ export type DoanAnh = {
  * trường nào mà hệ thống tự nghĩ ra — đó là nguyên tắc gốc của cả dự án, và
  * video là chỗ dễ vi phạm nhất vì nó cần "nghe hay".
  */
+/*
+ * Nơi video sẽ được đăng. Quyết định dòng công bố tiếp thị liên kết ở cuối màn.
+ *
+ * ⚠️ Không phải chuyện thẩm mỹ. Trên Shopee Video sản phẩm được GẮN THẲNG vào
+ * video, không có "link ở phần mô tả" nào cả — ghi câu đó là chỉ người xem đi
+ * tìm một thứ không tồn tại. Ngược lại trên TikTok/Facebook thì link nằm ngoài
+ * thật, và cả hai nền tảng BẮT BUỘC công bố quan hệ có thù lao.
+ */
+export type KenhDang = 'shopee' | 'ngoai';
+
 export type ThongSoVideoSanPham = {
   id: string;
+
+  /** Mặc định 'ngoai' (TikTok/Facebook/YouTube) nếu không khai. */
+  kenh?: KenhDang;
 
   /** Tên sản phẩm, lấy nguyên từ CSV Shopee. */
   tenSanPham: string;

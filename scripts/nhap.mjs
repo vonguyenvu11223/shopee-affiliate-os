@@ -28,7 +28,7 @@ if (!fs.existsSync(TEP_CHO)) {
   process.exit(1);
 }
 
-const { itemId } = JSON.parse(fs.readFileSync(TEP_CHO, 'utf8'));
+const { itemId, kenh } = JSON.parse(fs.readFileSync(TEP_CHO, 'utf8'));
 
 /*
  * Gỡ rào ```json và lời dẫn quanh khối JSON.
@@ -123,7 +123,12 @@ if (canh.length) {
 
 const kichBan = {
   itemId,
+  // Kênh do bước `prompt` chốt — lời thoại đã viết theo nó, video phải theo cùng.
+  kenh: kenh ?? 'ngoai',
   tieuDe: String(kq.tieuDe).trim(),
+  // Ngành hàng ChatGPT tự nhận từ ảnh — CSV Shopee không có cột này, cả 117 sản
+  // phẩm trong DB đều là "Chưa phân loại".
+  nganhHang: String(kq.nganhHang ?? '').trim(),
   promptVideo: String(kq.promptVideo).trim(),
   loiThoai: String(kq.loiThoai).trim(),
   ghiChuAnh: String(kq.ghiChuAnh ?? '').trim(),
@@ -140,7 +145,7 @@ fs.writeFileSync(tepRa, JSON.stringify(kichBan, null, 2) + '\n');
 fs.rmSync(TEP_DAN, { force: true });
 
 console.log(`✅ Đã lưu kịch bản cho ${itemId}`);
-console.log(`   ${soTieng} tiếng ≈ ${giay} giây\n`);
+console.log(`   ${soTieng} tiếng ≈ ${giay} giây${kichBan.nganhHang ? ` · ${kichBan.nganhHang}` : ''}\n`);
 
 if (kichBan.ghiChuAnh) {
   /*

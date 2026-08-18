@@ -221,6 +221,12 @@ const doanAnh = [{ tep: sp.anhTep, batDauMs: 0, ketThucMs: tongMs }];
 
 const props = {
   id: itemId,
+  /*
+   * Kênh đăng do `npm run prompt` chốt và `npm run nhap` lưu lại — KHÔNG đoán ở
+   * đây. Lời thoại đã viết theo kênh nào thì dòng công bố cuối màn phải theo
+   * kênh đó; lệch nhau là giọng nói "chạm giỏ hàng" mà chữ ghi "link ở mô tả".
+   */
+  kenh: kichBan.kenh ?? 'ngoai',
   tenSanPham: sp.tenSanPham,
   tenNganGon: kichBan.tieuDe || sp.tenNganGon,
   tenCuaHang: sp.tenCuaHang,

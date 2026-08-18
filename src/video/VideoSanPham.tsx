@@ -282,7 +282,9 @@ export const VideoSanPham: React.FC<ThongSoVideoSanPham> = p => {
           color: "rgba(255,255,255,0.42)",
         }}
       >
-        Tiếp thị liên kết · Link ở phần mô tả
+        {p.kenh === "shopee"
+          ? "Tiếp thị liên kết · Sản phẩm gắn trong video"
+          : "Tiếp thị liên kết · Link ở phần mô tả"}
       </div>
 
       {/* Thanh tiến độ — người xem video dọc quyết định lướt tiếp trong vài giây đầu. */}

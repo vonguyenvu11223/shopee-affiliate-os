@@ -16,12 +16,19 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ketNoi, docSanPham } from './lib/du-lieu-san-pham.mjs';
-import { CHI_DAN, GIAY_MUC_TIEU } from './lib/chi-dan-chatgpt.mjs';
+import { CHI_DAN, GIAY_MUC_TIEU, KIEU_MO, KIEU_CANH, KENH } from './lib/chi-dan-chatgpt.mjs';
 
 const GOC = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const THU_MUC = path.join(GOC, 'data', 'kich-ban');
 
-const thamSo = process.argv.slice(2).filter((a) => !a.startsWith('-'));
+const doiSo = process.argv.slice(2);
+const thamSo = doiSo.filter((a) => !a.startsWith('-'));
+
+/** Đọc `--ten <giá trị>`, trả về null nếu không có. */
+function co(ten) {
+  const i = doiSo.indexOf(`--${ten}`);
+  return i >= 0 && doiSo[i + 1] ? doiSo[i + 1] : null;
+}
 fs.mkdirSync(THU_MUC, { recursive: true });
 
 if (thamSo.length === 0) {
@@ -62,6 +69,47 @@ const khoi = {
   tangTruongPhanTram: sp.tangTruongPhanTram === null ? null : Number(sp.tangTruongPhanTram.toFixed(1)),
 };
 
+/*
+ * Chọn kiểu mở đầu + kiểu quay TỪ MÃ SẢN PHẨM, không phải ngẫu nhiên.
+ *
+ * Ngẫu nhiên thì chạy lại cùng một sản phẩm ra kiểu khác, và bạn không đối chiếu
+ * được video đã đăng với kiểu đã dùng. Bằm từ itemId thì cùng mã luôn ra cùng
+ * kiểu, mà 117 sản phẩm vẫn rải đều khắp 8 × 6 = 48 tổ hợp.
+ *
+ * Hai hạt giống khác nhau để kiểu mở và kiểu quay không đi thành cặp cố định —
+ * dùng chung một phép bằm thì sản phẩm nào có kiểu mở 3 cũng luôn có kiểu quay 3.
+ *
+ * ⚠️ Phải là phép bằm CÓ TÁN (FNV-1a + trộn cuối), không dùng `h*31+c` cho gọn.
+ * Mã sản phẩm Shopee dài bằng nhau và giống nhau ở mấy chữ số đầu; phép bằm yếu
+ * giữ nguyên sự giống đó — đo thật trên 117 mã: một kiểu mở chỉ được 4 sản phẩm
+ * trong khi kiểu khác được 18, và chỉ ra 23/48 tổ hợp. Bản này ra 44/48.
+ */
+function bam(chuoi, hatGiong) {
+  let h = (2166136261 ^ hatGiong) >>> 0;
+  for (const c of String(chuoi)) {
+    h ^= c.charCodeAt(0);
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  h ^= h >>> 15;
+  h = Math.imul(h, 2246822507) >>> 0;
+  h ^= h >>> 13;
+  h = Math.imul(h, 3266489909) >>> 0;
+  return (h ^ (h >>> 16)) >>> 0;
+}
+/*
+ * Mặc định Shopee Video.
+ *
+ * Đây là kênh có tỉ lệ mua cao nhất — người xem đã ở trong app mua hàng, đã đăng
+ * nhập, đã lưu địa chỉ. Đăng ra ngoài thì thêm `--kenh ngoai`.
+ */
+const maKenh = co('kenh') === 'ngoai' ? 'ngoai' : 'shopee';
+const kenh = KENH[maKenh];
+
+const chiSoMo = co('kieu') ? Number(co('kieu')) - 1 : bam(sp.itemId, 1) % KIEU_MO.length;
+const chiSoCanh = co('canh') ? Number(co('canh')) - 1 : bam(sp.itemId, 2) % KIEU_CANH.length;
+const kieuMo = KIEU_MO[((chiSoMo % KIEU_MO.length) + KIEU_MO.length) % KIEU_MO.length];
+const kieuCanh = KIEU_CANH[((chiSoCanh % KIEU_CANH.length) + KIEU_CANH.length) % KIEU_CANH.length];
+
 const noiDung = [
   `Viết prompt video ${GIAY_MUC_TIEU} giây và lời thoại cho sản phẩm dưới đây.`,
   'Tôi có đính kèm ảnh sản phẩm — hãy nhìn ảnh trước khi viết.',
@@ -69,15 +117,28 @@ const noiDung = [
   'SẢN PHẨM:',
   JSON.stringify(khoi, null, 2),
   '',
-  'Nhắc lại: không thêm bất kỳ dữ kiện nào ngoài khối trên và những gì thấy trong ảnh.',
+  `KIỂU MỞ ĐẦU (bắt buộc dùng): ${kieuMo}`,
+  `KIỂU QUAY (bắt buộc dùng): ${kieuCanh}`,
+  '',
+  `NƠI ĐĂNG: ${kenh.ten}`,
+  `CÂU MỜI CUỐI: ${kenh.moi}`,
+  '',
+  'Nhắc lại: tên hàng là chữ SEO của người bán — đọc để biết đó là món gì, đừng',
+  'nhắc lại lời quảng cáo trong đó. Không thêm dữ kiện nào ngoài khối trên và ảnh.',
 ].join('\n');
 
 const tepRa = path.join(THU_MUC, 'prompt-san-pham.txt');
 fs.writeFileSync(tepRa, noiDung + '\n');
-fs.writeFileSync(path.join(THU_MUC, '.dang-cho.json'), JSON.stringify({ itemId: sp.itemId }, null, 2));
+fs.writeFileSync(
+  path.join(THU_MUC, '.dang-cho.json'),
+  JSON.stringify({ itemId: sp.itemId, kenh: maKenh, kieuMo: chiSoMo + 1, kieuCanh: chiSoCanh + 1 }, null, 2)
+);
 
 console.log(noiDung);
 console.log('\n──────────────────────────────────────────────────────────────');
+console.log(`📍 Đăng lên: ${kenh.ten}`);
+console.log(`🎲 Kiểu mở ${chiSoMo + 1}/${KIEU_MO.length} · kiểu quay ${chiSoCanh + 1}/${KIEU_CANH.length}`);
+console.log('   Không ưng thì đổi:  --kieu <số>  --canh <số>\n');
 
 const canhBao = [];
 if (!sp.coAnh) canhBao.push(`Chưa có ảnh — chạy: npm run anh -- ${sp.itemId}`);
